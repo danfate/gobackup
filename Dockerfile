@@ -1,39 +1,41 @@
-FROM alpine:latest
+FROM debian:latest
+
 ARG VERSION=latest
-RUN apk add \
+ARG INFLUX_CLI_VERSION=2.7.5
+ARG ETCD_VER="v3.5.11"
+
+
+# 更新并安装所需软件包
+RUN apt-get update && apt-get install -y \
   curl \
   ca-certificates \
   openssl \
   postgresql-client \
-  mariadb-connector-c \
-  mysql-client \
+  libmariadb3 \
+  default-mysql-client \
   mariadb-backup \
-  redis \
-  mongodb-tools \
-  sqlite \
-  # replace busybox utils
+  redis-tools \
+  # mongodb-org-tools \
+  sqlite3 \
   tar \
   gzip \
   pigz \
   bzip2 \
   coreutils \
-  # there is no pbzip2 yet
   lzip \
-  xz-dev \
+  xz-utils \
   lzop \
-  xz \
-  # pixz is in edge atm
   zstd \
-  # microsoft sql dependencies \
-  libstdc++ \
-  gcompat \
-  icu \
-  # support change timezone
+  libstdc++6 \
+  icu-devtools \
   tzdata \
-  && \
-  rm -rf /var/cache/apk/*
+  wget \
+  unzip \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
+
+# 安装 sqlpackage
 RUN wget https://aka.ms/sqlpackage-linux && \
     unzip sqlpackage-linux -d /opt/sqlpackage && \
     rm sqlpackage-linux && \
@@ -41,8 +43,7 @@ RUN wget https://aka.ms/sqlpackage-linux && \
 
 ENV PATH="${PATH}:/opt/sqlpackage"
 
-# Install the influx CLI
-ARG INFLUX_CLI_VERSION=2.7.5
+# 安装 Influx CLI
 RUN case "$(uname -m)" in \
       x86_64) arch=amd64 ;; \
       aarch64) arch=arm64 ;; \
@@ -58,23 +59,21 @@ RUN case "$(uname -m)" in \
            "influx" && \
     influx version
 
-# Install the etcdctl
-ARG ETCD_VER="v3.5.11"
+# 安装 etcdctl
 RUN case "$(uname -m)" in \
       x86_64) arch=amd64 ;; \
       aarch64) arch=arm64 ;; \
       *) echo 'Unsupported architecture' && exit 1 ;; \
     esac && \
-    curl -fLO https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-${arch}.tar.gz && \
+    curl -fLO "https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-${arch}.tar.gz" && \
     tar xzf "etcd-${ETCD_VER}-linux-${arch}.tar.gz" && \
     cp etcd-${ETCD_VER}-linux-${arch}/etcdctl /usr/local/bin/etcdctl && \
-    rm -rf "etcd-${ETCD_VER}-linux-${arch}/etcdctl" \
-           "etcd-${ETCD_VER}-linux-${arch}.tar.gz" && \
+    rm -rf "etcd-${ETCD_VER}-linux-${arch}/etcdctl" "etcd-${ETCD_VER}-linux-${arch}.tar.gz" && \
     etcdctl version
 
-
-
+# 复制并运行自定义安装脚本
 ADD install /install
 RUN /install ${VERSION} && rm /install
 
 CMD ["/usr/local/bin/gobackup", "run"]
+
