@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     wget
 
-RUN wget -qO - https://dev.mysql.com/doc/refman/8.0/en/checking-gpg-signature.html | gpg --dearmor -o /usr/share/keyrings/mysql-keyring.gpg && \
+RUN wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql | gpg --dearmor -o /usr/share/keyrings/mysql-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/mysql-keyring.gpg] https://repo.mysql.com/apt/debian/ bookworm mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
 
 # 更新并安装所需软件包
