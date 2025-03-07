@@ -1,29 +1,10 @@
-FROM debian:latest
+FROM joseluisq/mysql-client:latest
 
 ARG VERSION=latest
 ARG INFLUX_CLI_VERSION=2.7.5
 ARG ETCD_VER="v3.5.11"
 
-RUN apt-get update && apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    wget
 
-RUN set -ex; \
-# gpg: key 5072E1F5: public key "MySQL Release Engineering <mysql-build@oss.oracle.com>" imported
-    key='859BE8D7C586F538430B19C2467B942D3A79BD29'; \
-    export GNUPGHOME="$(mktemp -d)"; \
-    gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
-    gpg --batch --export "$key" > /etc/apt/trusted.gpg.d/mysql.gpg; \
-    gpgconf --kill all; \
-    rm -rf "$GNUPGHOME"; \
-    apt-key list > /dev/null
-
-RUN echo "deb http://repo.mysql.com/apt/debian/ buster mysql-8.0" > /etc/apt/sources.list.d/mysql.list
-
-RUN apt-get update \
-    && apt-get install -y mysql-community-client
 
 # 更新并安装所需软件包
 RUN apt-get update && apt-get install -y \
