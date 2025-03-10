@@ -44,10 +44,6 @@ RUN wget https://aka.ms/sqlpackage-linux && \
 
 ENV PATH="${PATH}:/opt/sqlpackage"
 
-RUN sed -i 's/\[openssl_init\]/# [openssl_init]/' /etc/ssl/openssl.cnf && \
-    printf "\n\n[openssl_init]\nssl_conf = ssl_sect" >> /etc/ssl/openssl.cnf && \
-    printf "\n\n[ssl_sect]\nsystem_default = ssl_default_sect" >> /etc/ssl/openssl.cnf && \
-    printf "\n\n[ssl_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=0\n" >> /etc/ssl/openssl.cnf
 
 # 安装 Influx CLI
 RUN case "$(uname -m)" in \
@@ -80,6 +76,13 @@ RUN case "$(uname -m)" in \
 # 复制并运行自定义安装脚本
 ADD install /install
 RUN /install ${VERSION} && rm /install
+
+RUN { \
+    sed -i 's/\[openssl_init\]/# [openssl_init]/' /etc/ssl/openssl.cnf && \
+    printf "\n\n[openssl_init]\nssl_conf = ssl_sect" >> /etc/ssl/openssl.cnf && \
+    printf "\n\n[ssl_sect]\nsystem_default = ssl_default_sect" >> /etc/ssl/openssl.cnf && \
+    printf "\n\n[ssl_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=0\n" >> /etc/ssl/openssl.cnf; \
+}
 
 CMD ["/usr/local/bin/gobackup", "run"]
 
